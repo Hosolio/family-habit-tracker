@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Family Habit Tracker</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-2: #10b981;
+      --border: #e5e7eb;
+      --checked: #d1fae5;
+      --warn: #f59e0b;
+    }
+    [data-theme="sunset"] {
+      --bg: #fff7ed;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #f97316;
+      --accent-2: #22c55e;
+      --border: #fde68a;
+      --checked: #fde68a;
+    }
+    [data-theme="midnight"] {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #34d399;
+      --border: #1f2937;
+      --checked: #064e3b;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    select, input[type="text"], button {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid var(--accent);
+    }
+    button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    button.secondary { background: var(--accent-2); color: white; border-color: var(--accent-2); }
+    button.warn { background: var(--warn); color: white; border-color: var(--warn); }
+    .grid {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .category {
+      border-top: 1px solid var(--border);
+    }
+    .category:first-child { border-top: none; }
+    .cat-header {
+      background: rgba(37, 99, 235, 0.08);
+      padding: 10px 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table th, .table td {
+      border-top: 1px solid var(--border);
+      padding: 10px;
+      text-align: center;
+    }
+    .table th {
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      z-index: 1;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .habit-name {
+      text-align: left;
+      font-weight: 500;
+    }
+    .checkcell {
+      min-width: 36px;
+    }
+    .checkcell input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .checked-row {
+      background: var(--checked);
+    }
+    footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 10px 0 0;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+    }
+    .pill {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    @media (max-width: 720px) {
+      .table th, .table td { padding: 8px; }
+      .habit-name { font-size: 0.95rem; }
+      header { gap: 8px; }
+    }
+    @media print {
+      header, footer { display: none; }
+      body { background: white; }
+      .grid { border: 1px solid #ddd; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app" data-theme="default">
+    <header>
+      <div>
+        <h1>Family Habit Tracker</h1>
+        <div class="legend" aria-hidden="true">
+          <span class="badge"><span class="pill" style="background: var(--accent)"></span> Sleep</span>
+          <span class="badge"><span class="pill" style="background: var(--accent-2)"></span> Health</span>
+          <span class="badge"><span class="pill" style="background: #a78bfa"></span> Emotional</span>
+          <span class="badge"><span class="pill" style="background: #f59e0b"></span> Hobbies</span>
+        </div>
+      </div>
+      <div class="controls" role="group" aria-label="Controls">
+        <select id="memberSelect" aria-label="Family member"></select>
+        <input id="newMember" type="text" placeholder="Add family member" aria-label="New member name" />
+        <button class="secondary" id="addMemberBtn">Add</button>
+        <select id="themeSelect" aria-label="Theme">
+          <option value="default">Default</option>
+          <option value="sunset">Sunset</option>
+          <option value="midnight">Midnight</option>
+        </select>
+        <button id="resetWeekBtn" class="warn">New week</button>
+        <button id="printBtn" class="primary">Print</button>
+      </div>
+    </header>
+
+    <div class="grid" id="grid" role="table" aria-label="Habit tracker">
+      <!-- Categories will be injected here -->
+    </div>
+
+    <footer>
+      <p>Progress is saved in this browser for each family member. To share across devices, host the file online and have each person use their own device.</p>
+    </footer>
+  </div>
+
+  <script>
+    // --- Data model (child-friendly) ---
+    const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+    const CATEGORIES = [
+      {
+        id: "sleep",
+        name: "Sleep hygiene",
+        color: "var(--accent)",
+        habits: [
+          { id: "sleep9", name: "Sleep ≥ 9 hrs (age-appropriate)" },
+          { id: "bedtime", name: "Consistent bedtime" },
+          { id: "waketime", name: "Consistent wake time" },
+          { id: "screenbed", name: "Limit screen time (< 1 hr before bed)" },
+          { id: "orderedspace", name: "Keep space ordered" },
+        ],
+      },
+      {
+        id: "health",
+        name: "Physical health",
+        color: "var(--accent-2)",
+        habits: [
+          { id: "exercise30", name: "Exercise ≥ 30 min (play/sports)" },
+          { id: "meals", name: "Balanced meals" },
+          { id: "hydration", name: "Hydration ≥ 6–8 cups" },
+        ],
+      },
+      {
+        id: "emotional",
+        name: "Mental & emotional",
+        color: "#a78bfa",
+        habits: [
+          { id: "mindfulness", name: "Mindfulness 5–10 min (breathing, journaling)" },
+          { id: "social", name: "Social connection (friends/family)" },
+          { id: "outdoor20", name: "Outdoor time ≥ 20 min" },
+        ],
+      },
+      {
+        id: "hobbies",
+        name: "Hobbies & activities",
+        color: "#f59e0b",
+        habits: [
+          { id: "creative", name: "Creative hobby (drawing, music, crafts)" },
+          { id: "reading", name: "Reading for fun" },
+          { id: "playtime", name: "Playtime (games, imaginative play)" },
+        ],
+      },
+    ];
+
+    // --- Persistence ---
+    const STORAGE_KEY = "family_habit_tracker_v1";
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : { members: ["Family"], theme: "default", data: {} };
+      } catch {
+        return { members: ["Family"], theme: "default", data: {} };
+      }
+    }
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    let state = loadState();
+    let currentMember = state.members[0];
+
+    // --- UI setup ---
+    const app = document.getElementById("app");
+    const grid = document.getElementById("grid");
+    const memberSelect = document.getElementById("memberSelect");
+    const newMemberInput = document.getElementById("newMember");
+    const addMemberBtn = document.getElementById("addMemberBtn");
+    const themeSelect = document.getElementById("themeSelect");
+    const resetWeekBtn = document.getElementById("resetWeekBtn");
+    const printBtn = document.getElementById("printBtn");
+
+    function renderMembers() {
+      memberSelect.innerHTML = "";
+      state.members.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = m;
+        memberSelect.appendChild(opt);
+      });
+      memberSelect.value = currentMember;
+    }
+
+    function ensureMemberData(member) {
+      if (!state.data[member]) state.data[member] = {};
+      CATEGORIES.forEach(cat => {
+        cat.habits.forEach(h => {
+          const key = `${cat.id}:${h.id}`;
+          if (!state.data[member][key]) {
+            state.data[member][key] = DAYS.reduce((acc, d) => (acc[d] = false, acc), {});
+          }
+        });
+      });
+    }
+
+    function renderGrid() {
+      grid.innerHTML = "";
+      CATEGORIES.forEach(cat => {
+        const section = document.createElement("section");
+        section.className = "category";
+
+        const header = document.createElement("div");
+        header.className = "cat-header";
+        header.innerHTML = `
+          <span>${cat.name}</span>
+          <span style="display:inline-flex;align-items:center;gap:8px">
+            <span class="pill" style="background:${cat.color}"></span>
+            <small style="color:var(--muted)">Weekly tracker</small>
+          </span>
+        `;
+        section.appendChild(header);
+
+        const table = document.createElement("table");
+        table.className = "table";
+        table.setAttribute("role", "grid");
+
+        const thead = document.createElement("thead");
+        const headRow = document.createElement("tr");
+        const habitTh = document.createElement("th");
+        habitTh.textContent = "Habit";
+        headRow.appendChild(habitTh);
+        DAYS.forEach(d => {
+          const th = document.createElement("th");
+          th.textContent = d;
+          headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        cat.habits.forEach(h => {
+          const row = document.createElement("tr");
+          const key = `${cat.id}:${h.id}`;
+          const habitTd = document.createElement("td");
+          habitTd.className = "habit-name";
+          habitTd.textContent = h.name;
+          row.appendChild(habitTd);
+
+          DAYS.forEach(day => {
+            const td = document.createElement("td");
+            td.className = "checkcell";
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = !!state.data[currentMember]?.[key]?.[day];
+            cb.setAttribute("aria-label", `${h.name} ${day}`);
+            cb.addEventListener("change", () => {
+              ensureMemberData(currentMember);
+              state.data[currentMember][key][day] = cb.checked;
+              saveState();
+              updateRowStyle(row, key);
+            });
+            td.appendChild(cb);
+            row.appendChild(td);
+          });
+
+          updateRowStyle(row, key);
+          tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        section.appendChild(table);
+        grid.appendChild(section);
+      });
+    }
+
+    function updateRowStyle(row, key) {
+      const memberData = state.data[currentMember]?.[key];
+      const allChecked = memberData && DAYS.every(d => !!memberData[d]);
+      if (allChecked) row.classList.add("checked-row");
+      else row.classList.remove("checked-row");
+    }
+
+    // --- Events ---
+    addMemberBtn.addEventListener("click", () => {
+      const name = newMemberInput.value.trim();
+      if (!name) return;
+      if (!state.members.includes(name)) {
+        state.members.push(name);
+        ensureMemberData(name);
+        saveState();
+      }
+      currentMember = name;
+      newMemberInput.value = "";
+      renderMembers();
+      renderGrid();
+    });
+
+    memberSelect.addEventListener("change", (e) => {
+      currentMember = e.target.value;
+      ensureMemberData(currentMember);
+      saveState();
+      renderGrid();
+    });
+
+    themeSelect.addEventListener("change", (e) => {
+      const theme = e.target.value;
+      state.theme = theme;
+      app.setAttribute("data-theme", theme);
+      saveState();
+    });
+
+    resetWeekBtn.addEventListener("click", () => {
+      if (!confirm("Start a new week? This clears all checkboxes for the selected member.")) return;
+      ensureMemberData(currentMember);
+      Object.keys(state.data[currentMember]).forEach(key => {
+        DAYS.forEach(d => state.data[currentMember][key][d] = false);
+      });
+      saveState();
+      renderGrid();
+    });
+
+    printBtn.addEventListener("click", () => window.print());
+
+    // --- Init ---
+    if (!state.members || state.members.length === 0) state.members = ["Family"];
+    currentMember = state.members[0];
+    ensureMemberData(currentMember);
+    renderMembers();
+    themeSelect.value = state.theme || "default";
+    app.setAttribute("data-theme", state.theme || "default");
+    renderGrid();
+  </script>
+</body>
+</html>
+Want tweaks?
+Labels: Adjust targets (e.g., hydration) to match your kids’ ages.
+
+More habits: Add rows by editing the CATEGORIES list in the code.
+
+Ex
